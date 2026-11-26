@@ -3,29 +3,95 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <title>Unity Web Player | ShellMazeGame</title>
+    <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>ShellMazeGame</title>
+    <style>
+      html, body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: #231F20;
+        touch-action: none;
+      }
+      #unity-container {
+        position: fixed;
+        inset: 0;
+        width: 100vw;
+        height: 100dvh;
+      }
+      #unity-canvas {
+        width: 100%;
+        height: 100%;
+        display: block;
+        background: #231F20;
+      }
+      #unity-loading-bar {
+        position: fixed;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        width: min(320px, 70vw);
+        text-align: center;
+        font-family: system-ui, -apple-system, sans-serif;
+        color: #ffffff;
+        z-index: 10;
+      }
+      #unity-progress-bar-empty {
+        width: 100%;
+        height: 14px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 7px;
+        overflow: hidden;
+      }
+      #unity-progress-bar-full {
+        width: 0%;
+        height: 100%;
+        background: #33d959;
+        transition: width 0.1s linear;
+      }
+      #unity-fullscreen-button {
+        position: fixed;
+        right: 14px;
+        bottom: 14px;
+        width: 42px;
+        height: 42px;
+        border: none;
+        border-radius: 10px;
+        background: rgba(20, 24, 32, 0.72);
+        color: #ffffff;
+        font-size: 20px;
+        line-height: 42px;
+        text-align: center;
+        cursor: pointer;
+        z-index: 20;
+        backdrop-filter: blur(4px);
+      }
+      #unity-fullscreen-button:hover {
+        background: rgba(20, 24, 32, 0.92);
+      }
+    </style>
   </head>
-  <body style="text-align: center; padding: 0; border: 0; margin: 0;">
-    <canvas id="unity-canvas" width=1920 height=1080 tabindex="-1" style="width: 1920px; height: 1080px; background: #231F20"></canvas>
+  <body>
+    <div id="unity-container">
+      <canvas id="unity-canvas" tabindex="-1"></canvas>
+      <div id="unity-loading-bar">
+        <div id="unity-progress-bar-empty">
+          <div id="unity-progress-bar-full"></div>
+        </div>
+      </div>
+      <button id="unity-fullscreen-button" title="Toggle Fullscreen" aria-label="Toggle Fullscreen">&#x26F6;</button>
+    </div>
     <script src="Build/ShellGameWebGLBuild.loader.js"></script>
     <script>
-      if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
-        // Mobile device style: fill the whole browser client area with the game canvas:
-        var meta = document.createElement('meta');
-        meta.name = 'viewport';
-        meta.content = 'width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes';
-        document.getElementsByTagName('head')[0].appendChild(meta);
+      var container = document.querySelector("#unity-container");
+      var canvas = document.querySelector("#unity-canvas");
+      var loadingBar = document.querySelector("#unity-loading-bar");
+      var progressBarFull = document.querySelector("#unity-progress-bar-full");
+      var fullscreenButton = document.querySelector("#unity-fullscreen-button");
 
-        var canvas = document.querySelector("#unity-canvas");
-        canvas.style.width = "100%";
-        canvas.style.height = "100%";
-        canvas.style.position = "fixed";
-
-        document.body.style.textAlign = "left";
-
-      }
-
-      createUnityInstance(document.querySelector("#unity-canvas"), {
+      createUnityInstance(canvas, {
         arguments: [],
         dataUrl: "Build/ShellGameWebGLBuild.data",
         frameworkUrl: "Build/ShellGameWebGLBuild.framework.js",
@@ -34,9 +100,24 @@
         companyName: "CloudPlayXP",
         productName: "ShellMazeGame",
         productVersion: "0.1.0",
-        // matchWebGLToCanvasSize: false, // Uncomment this to separately control WebGL canvas render size and DOM element size.
-        // devicePixelRatio: 1, // Uncomment this to override low DPI rendering on high DPI displays.
+      }, (progress) => {
+        progressBarFull.style.width = (100 * progress) + "%";
       }).then((unityInstance) => {
+        loadingBar.style.display = "none";
+        fullscreenButton.onclick = () => {
+          if (document.fullscreenElement || document.webkitFullscreenElement) {
+            if (document.exitFullscreen) document.exitFullscreen();
+            else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+          } else {
+            if (unityInstance.SetFullscreen) {
+              unityInstance.SetFullscreen(1);
+            } else if (container.requestFullscreen) {
+              container.requestFullscreen();
+            } else if (container.webkitRequestFullscreen) {
+              container.webkitRequestFullscreen();
+            }
+          }
+        };
       }).catch((message) => {
         alert(message);
       });
